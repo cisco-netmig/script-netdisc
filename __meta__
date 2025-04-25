@@ -1,0 +1,10 @@
+{
+    "name": "Netdisc",
+    "version": "1.0.0",
+    "author": "Sanjeev Krishna",
+    "uuid": "f2f1ad60-e351-43b6-a8c2-cd332e7850f7",
+    "tags": [
+        "Discovery",
+        "Assessment"
+    ]
+}
