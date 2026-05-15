@@ -1,4 +1,4 @@
 pyqt5
 futures
 requests
-netcore @ git+https://wwwin-github.cisco.com/Netmig/netcore.git
+git+https://github.com/cisco-netmig/core-netcore.git#egg=netcore
