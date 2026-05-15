@@ -23,3 +23,6 @@
 
 ## Tags  
 `#NetworkDiscovery` `#Netmig` `#Automation` `#NetworkMigration` `#Diagnostics` `#Cisco` `#Infrastructure` `#ARP` `#VLAN` `#CDP` `#LLDP` `#MAC` `#Routing` `#ConfigManagement`
+
+## Screenshots
+![Project Logo](./SCREENSHOT.png)

@@ -1,5 +1,7 @@
-import os
 import logging
+logger = logging.getLogger(__name__)
+
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
@@ -40,7 +42,7 @@ class RunEvent(QtCore.QThread):
 
         self.devices = list(filter(None, self.form.device_text_edit.toPlainText().splitlines()))
         if not self.devices:
-            logging.warning("No devices provided.")
+            logger.warning("No devices provided.")
             return
 
         self.progress_per_device = 90 / len(self.devices)
@@ -57,14 +59,14 @@ class RunEvent(QtCore.QThread):
         self.inventory_enabled = self.form.checkboxes["inventory"].isChecked()
         self.config_enabled = self.form.checkboxes["config"].isChecked()
 
-        logging.info("RunEvent started.")
+        logger.info("RunEvent started.")
         self.data = {'summary': {}, 'links': {}}
 
         self.thread_executor()
         self.refactor_data()
         self.reporting()
 
-        logging.info("RunEvent finished.")
+        logger.info("RunEvent finished.")
         self.add_progress.emit(2)
 
     def thread_executor(self):
@@ -72,7 +74,7 @@ class RunEvent(QtCore.QThread):
         Run network discovery tasks in parallel using a thread pool.
         Logs any exceptions from individual device tasks.
         """
-        logging.info("Starting thread pool execution...")
+        logger.info("Starting thread pool execution...")
         with ThreadPoolExecutor(max_workers=8) as executor:
             futures = {}
             for device in self.devices:
@@ -84,7 +86,7 @@ class RunEvent(QtCore.QThread):
             for device in self.devices:
                 exception = futures[device].exception()
                 if exception:
-                    logging.error(f"Exception occurred for {device}: {exception}")
+                    logger.error(f"Exception occurred for {device}: {exception}")
 
     def netdisc_task(self, device):
         """
@@ -134,7 +136,7 @@ class RunEvent(QtCore.QThread):
 
         from netcore import GenericHandler, get_config_section
 
-        logging.info(f'Connecting to {device}...')
+        logger.info(f'Connecting to {device}...')
 
         proxy = {
             'hostname': self.form.session['JUMPHOST_IP'],
@@ -150,83 +152,83 @@ class RunEvent(QtCore.QThread):
                 proxy=proxy,
                 handler='NETMIKO'
             )
-            logging.info(f'Connection established to {device}')
+            logger.info(f'Connection established to {device}')
         except Exception:
-            logging.error(f'Connection failed to {device}')
+            logger.error(f'Connection failed to {device}')
             self.add_progress.emit(self.progress_per_device)
             return
 
-        logging.info(f'Capturing & parsing show commands for {device}')
+        logger.info(f'Capturing & parsing show commands for {device}')
         iface_data = handler.sendCommand(cmd='show interface', autoParse=True, key='interface')
 
         iface_status_data = {}
         iface_desc_data = {}
         if self.interface_enabled:
-            logging.info(f'Gathering "show interface status" for {device}')
+            logger.info(f'Gathering "show interface status" for {device}')
             iface_status_data = handler.sendCommand(cmd='show interface status', autoParse=True, key='interface')
 
-            logging.info(f'Gathering "show interface description" for {device}')
+            logger.info(f'Gathering "show interface description" for {device}')
             iface_desc_data = handler.sendCommand(cmd='show interface description', autoParse=True, key='interface')
 
         swport_data = {}
         if self.switchport_enabled:
-            logging.info(f'Gathering "show interface switchport" for {device}')
+            logger.info(f'Gathering "show interface switchport" for {device}')
             swport_data = handler.sendCommand(cmd='show interface switchport', autoParse=True, key='interface')
 
         vlan_data = {}
         if self.vlan_enabled:
-            logging.info(f'Gathering VLAN information for {device}')
+            logger.info(f'Gathering VLAN information for {device}')
             vlan_data = handler.sendCommand(cmd='show vlan', autoParse=True, key='vlan_id')
 
         mac_data = {}
         if self.mac_enabled:
-            logging.info(f'Gathering "show mac address" for {device}')
+            logger.info(f'Gathering "show mac address" for {device}')
             mac_data = handler.sendCommand(cmd='show mac address', autoParse=True, key='mac_address')
 
         arp_data = {}
         if self.arp_enabled:
-            logging.info(f'Gathering "show ip arp" for {device}')
+            logger.info(f'Gathering "show ip arp" for {device}')
             arp_data = handler.sendCommand(cmd='show ip arp', autoParse=True, key='mac_address')
 
         lldp_data = {}
         cdp_data = {}
         if self.discovery_enabled:
-            logging.info(f'Gathering "show lldp neighbors" for {device}')
+            logger.info(f'Gathering "show lldp neighbors" for {device}')
             lldp_data = handler.sendCommand(cmd='show lldp neighbors', autoParse=True, key='local_interface')
 
-            logging.info(f'Gathering "show cdp neighbors" for {device}')
+            logger.info(f'Gathering "show cdp neighbors" for {device}')
             cdp_data = handler.sendCommand(cmd='show cdp neighbors', autoParse=True, key='local_interface')
 
         ip_iface_data = {}
         if self.ip_interface_enabled:
-            logging.info(f'Gathering "show ip interface" for {device}')
+            logger.info(f'Gathering "show ip interface" for {device}')
             ip_iface_data = handler.sendCommand(cmd='show ip interface', autoParse=True, key='interface')
 
         bgp_neighbor_data = {}
         ospf_neighbor_data = {}
         if self.routing_enabled:
-            logging.info(f'Gathering "show ip bgp neighbors" for {device}')
+            logger.info(f'Gathering "show ip bgp neighbors" for {device}')
             bgp_neighbor_data = handler.sendCommand(cmd='show ip bgp neighbors', autoParse=True, key='neighbor')
 
-            logging.info(f'Gathering "show ip ospf interface brief" for {device}')
+            logger.info(f'Gathering "show ip ospf interface brief" for {device}')
             ospf_neighbor_data = handler.sendCommand(cmd='show ip ospf interface brief', autoParse=True,
                                                      key='interface')
 
         config = ''
         if self.config_enabled:
-            logging.info(f'Gathering "show runn" for {device}')
+            logger.info(f'Gathering "show runn" for {device}')
             config = handler.sendCommand(cmd='show runn')
 
         version_data = {}
         mgmt_ip = ''
         if self.inventory_enabled:
-            logging.info(f'Gathering "show version" for {device}')
+            logger.info(f'Gathering "show version" for {device}')
             version_data = handler.sendCommand(cmd='show version', autoParse=True)[0]
 
-            logging.info(f'Finding MGMT IP from hostname for {device}')
+            logger.info(f'Finding MGMT IP from hostname for {device}')
             mgmt_ip = gethostbyname(device)
 
-        logging.info(f'Processing output for {device}')
+        logger.info(f'Processing output for {device}')
         link_data = {}
 
         for iface, iface_props in iface_data.items():
@@ -351,10 +353,10 @@ class RunEvent(QtCore.QThread):
         self.data['summary'][device] = summary_data
 
         # Finalize
-        logging.info(f'Completed processing for {device}')
+        logger.info(f'Completed processing for {device}')
         self.add_progress.emit(self.progress_per_device)
-        if hasattr(logging, 'savings'):
-            logging.savings(120)
+        if hasattr(logger, 'savings'):
+            logger.savings(120)
 
     def refactor_data(self):
         """
@@ -363,7 +365,7 @@ class RunEvent(QtCore.QThread):
         This method restructures the 'summary' and 'links' sections of `self.data` by converting
         device-based keys into sequential index-based keys, preserving all associated properties.
         """
-        logging.info("Refactoring data structure for reporting")
+        logger.info("Refactoring data structure for reporting")
 
         summary_idx = 0
         link_idx = 0
@@ -409,14 +411,14 @@ class RunEvent(QtCore.QThread):
 
             # Write summary data if available
             if self.data['summary']:
-                logging.info("Generating summary worksheet")
+                logger.info("Generating summary worksheet")
                 worksheet_summary = workbook.add_worksheet('Summary')
                 worksheet_summary.freeze_panes(1, 2)
                 workbook.dump(self.data['summary'], worksheet_summary)
 
             # Write link data if available
             if self.data['links']:
-                logging.info("Generating links worksheet")
+                logger.info("Generating links worksheet")
                 worksheet_links = workbook.add_worksheet('Links')
                 worksheet_links.freeze_panes(1, 3)
                 workbook.dump(self.data['links'], worksheet_links)
